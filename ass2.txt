@@ -1,0 +1,422 @@
+/* Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above notice and this permission notice shall be included in all copies
+ * or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+/* File for "Textures" lesson of the OpenGL tutorial on
+ * www.videotutorialsrock.com
+ */
+#include <windows.h>
+#include <assert.h>
+#include <fstream>
+
+#include <iostream>
+#include <stdlib.h>
+
+#ifdef __APPLE__
+#include <OpenGL/OpenGL.h>
+#include <GLUT/glut.h>
+#else
+#include <GL/glut.h>
+#endif
+
+#include "imageloader.h"
+
+using namespace std;
+
+void handleKeypress(unsigned char key, int x, int y) {
+	switch (key) {
+		case 27: //Escape key
+			exit(0);
+	}
+}
+//loadTexture function takes an Image object and returns a GLuint (which is kind of like an unsigned int) giving the id that OpenGL assigned to the texture.
+//Makes the image into a texture, and returns the id of the texture
+GLuint loadTexture(Image* image) {
+	GLuint textureId;
+
+	//The first argument is the number of textures we need, and the second is an array where OpenGL will store the id's of the textures.
+	glGenTextures(1, &textureId); //Make room for our texture
+	// to assign the texture id to our image data.
+//	We call glBindTexture(GL_TEXTURE_2D, textureId) to let OpenGL know
+// that we want to work with the texture we just created. Then, we call glTexImage2D to load the image into OpenGL.
+	glBindTexture(GL_TEXTURE_2D, textureId); //Tell OpenGL which texture to edit
+	//Map the image to the texture
+	glTexImage2D(GL_TEXTURE_2D,                //Always GL_TEXTURE_2D
+				 0,                            //0 for now
+				 GL_RGB,                       //Format OpenGL uses for image
+				 image->width, image->height,  //Width and height
+				 0,                            //The border of the image
+				 GL_RGB, //GL_RGB, because pixels are stored in RGB format
+				 GL_UNSIGNED_BYTE, //GL_UNSIGNED_BYTE, because pixels are stored
+				                   //as unsigned numbers
+				 image->pixels);               //The actual pixel data
+	return textureId; //Returns the id of the texture
+}
+
+GLuint _textureId; //The id of the texture
+GLuint _textureId1;
+GLuint _textureId2;
+GLuint _textureId3;
+
+void initRendering() {
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_COLOR_MATERIAL);
+
+
+	//Take a look at imageloader.h. This gives us the basic idea of what loadBMP does.
+	//(The actual code for loadBMP is in imageloader.cpp.) Given a filename, it returns an Image object,
+	//which contains the width and height of the image, as well as the array pixels,
+	//which stores the pixels' colors in the format we want.
+	//Image* image = loadBMP("C:\\Users\\student\\Desktop\\Desktop\\working-texture\\a.bmp");
+
+	Image* image = loadBMP("E:\\CG\\working-texture\\messi1.bmp");
+
+
+	//Image* image1 = loadBMP("C:\\Users\\student\\Desktop\\Desktop\\working-texture\\vtr.bmp");
+	Image* image1 = loadBMP("E:\\CG\\working-texture\\bw.bmp");
+
+	Image* image2 = loadBMP("E:\\CG\\working-texture\\w.bmp");
+
+	Image* image3 = loadBMP("E:\\CG\\working-texture\\goat.bmp");
+
+	//Once we've got the image, we have to send it to OpenGL. We do this in a function we write called loadTexture.
+	_textureId = loadTexture(image);
+	delete image;
+	_textureId1 = loadTexture(image1);
+	delete image1;
+	_textureId2 = loadTexture(image2);
+	delete image2;
+	_textureId3 = loadTexture(image3);
+	delete image3;
+	//Note that we should only use images whose widths and heights are 64, 128, or 256, since computers like powers of 2.
+//	Other sizes of images might not work properly.
+
+
+
+}
+
+void handleResize(int w, int h) {
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(45.0, (float)w / (float)h, 1.0, 200.0);
+}
+
+void drawScene() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+	glTranslatef(0.0f, 1.0f, -6.0f);
+
+	GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientLight);
+
+	GLfloat directedLight[] = {0.7f, 0.7f, 0.7f, 1.0f};
+	GLfloat directedLightPos[] = {-10.0f, 15.0f, 20.0f, 0.0f};
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, directedLight);
+	glLightfv(GL_LIGHT0, GL_POSITION, directedLightPos);
+
+	//On to drawScene. We start by calling glEnable(GL_TEXTURE_2D) to enable applying textures
+//	and glBindTexture(GL_TEXTURE_2D, _textureId) to tell OpenGL that we want to use the texture with id _textureId.
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, _textureId1);
+    glBindTexture(GL_TEXTURE_2D, _textureId2);
+	//Bottom
+
+	//The first call tells OpenGL to use the blocky mapping (GL_NEAREST)
+//	when the texture is far away from us, and the second call tells it to use blocky mapping when the texture is close.
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	// blurry mapping, we'd pass GL_LINEAR as the third parameter of these two functions.
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+
+	//Now, in addition to a normal vector, each vertex has a texture coordinate.
+	//The texture coordinates indicates to what point on the image each vertex maps.
+	//The texture coordinate (a + b, c + d), where a and c are integers,
+//	indicates the spot that is the fractional amount b above the bottom of the texture
+// and the fractional amount d right of the left of the texture.
+// To specify the texture coordinates of a vertex, we simply call glTexCoord2f with the texture coordinates we want before calling glVertex3f for the vertex.
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glBegin(GL_TRIANGLES);
+
+	glNormal3f(0.0, 1.0f, 0.0f);
+	glTexCoord2f(64.0f, 0.0f);
+	glVertex3f(-2.5f, -2.5f, 2.5f);
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(2.5f, -2.5f, 2.5f);
+	glTexCoord2f(0.0f, 64.0f);
+	glVertex3f(0.0f, -2.5f, -2.5f);
+	glEnd();
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, _textureId1);
+
+	//Back
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glBegin(GL_QUADS);
+
+	glNormal3f(0.0f, 0.0f, 1.0f);
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-2.5f, -2.5f, -2.5f);
+	glTexCoord2f(4.0f, 0.0f);
+	glVertex3f(2.5f, -2.5f, -2.5f);
+	glTexCoord2f(4.0f, 4.0f);
+	glVertex3f(2.5f, 2.5f, -2.5f);
+	glTexCoord2f(0.0f, 4.0f);
+    glVertex3f(-2.5f, 2.5f, -2.5f);
+	glEnd();
+
+	//Left
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, _textureId1);
+	glBindTexture(GL_TEXTURE_2D, _textureId2);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glBegin(GL_QUADS);
+
+	glNormal3f(1.0f, 0.0f, 0.0f);
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-2.5f, -2.5f, 2.5f);
+	glTexCoord2f(64.0f, 0.0f);
+	glVertex3f(-2.5f, -2.5f, -2.5f);
+	glTexCoord2f(64.0f, 64.0f);
+	glVertex3f(-2.5f, 2.5f, -2.5f);
+	glTexCoord2f(0.0f, 64.0f);
+	glVertex3f(-2.5f, 2.5f, 2.5f);
+
+	glEnd();
+
+	//Right
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, _textureId2);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glBegin(GL_QUADS);
+
+	glNormal3f(1.0f, 0.0f, 0.0f);
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(2.5f, -2.5f, 2.5f);
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f(2.5f, -2.5f, -2.5f);
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f(2.5f, 2.5f, -2.5f);
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(2.5f, 2.5f, 2.5f);
+
+	glEnd();
+
+	glDisable(GL_TEXTURE_2D);
+
+	glutSwapBuffers();
+}
+
+int main(int argc, char** argv) {
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitWindowSize(400, 400);
+
+	glutCreateWindow("Textures - offline");
+	initRendering();
+
+	glutDisplayFunc(drawScene);
+	glutKeyboardFunc(handleKeypress);
+	glutReshapeFunc(handleResize);
+
+	glutMainLoop();
+	return 0;
+}
+/*Image::Image(char* ps, int w, int h) : pixels(ps), width(w), height(h) {
+
+}
+
+Image::~Image() {
+	delete[] pixels;
+}*/
+
+namespace {
+	//Converts a four-character array to an integer, using little-endian form
+	int toInt(const char* bytes) {
+		return (int)(((unsigned char)bytes[3] << 24) |
+					 ((unsigned char)bytes[2] << 16) |
+					 ((unsigned char)bytes[1] << 8) |
+					 (unsigned char)bytes[0]);
+	}
+
+	//Converts a two-character array to a short, using little-endian form
+	short toShort(const char* bytes) {
+		return (short)(((unsigned char)bytes[1] << 8) |
+					   (unsigned char)bytes[0]);
+	}
+
+	//Reads the next four bytes as an integer, using little-endian form
+	int readInt(ifstream &input) {
+		char buffer[4];
+		input.read(buffer, 4);
+		return toInt(buffer);
+	}
+
+	//Reads the next two bytes as a short, using little-endian form
+	short readShort(ifstream &input) {
+		char buffer[2];
+		input.read(buffer, 2);
+		return toShort(buffer);
+	}
+
+	//Just like auto_ptr, but for arrays
+	template<class T>
+	class auto_array {
+		private:
+			T* array;
+			mutable bool isReleased;
+		public:
+			explicit auto_array(T* array_ = NULL) :
+				array(array_), isReleased(false) {
+			}
+
+			auto_array(const auto_array<T> &aarray) {
+				array = aarray.array;
+				isReleased = aarray.isReleased;
+				aarray.isReleased = true;
+			}
+
+			~auto_array() {
+				if (!isReleased && array != NULL) {
+					delete[] array;
+				}
+			}
+
+			T* get() const {
+				return array;
+			}
+
+			T &operator*() const {
+				return *array;
+			}
+
+			void operator=(const auto_array<T> &aarray) {
+				if (!isReleased && array != NULL) {
+					delete[] array;
+				}
+				array = aarray.array;
+				isReleased = aarray.isReleased;
+				aarray.isReleased = true;
+			}
+
+			T* operator->() const {
+				return array;
+			}
+
+			T* release() {
+				isReleased = true;
+				return array;
+			}
+
+			void reset(T* array_ = NULL) {
+				if (!isReleased && array != NULL) {
+					delete[] array;
+				}
+				array = array_;
+			}
+
+			T* operator+(int i) {
+				return array + i;
+			}
+
+			T &operator[](int i) {
+				return array[i];
+			}
+	};
+}
+
+/*Image* loadBMP(const char* filename) {
+	ifstream input;
+	input.open(filename, ifstream::binary);
+	assert(!input.fail() || !"Could not find file");
+	char buffer[2];
+	input.read(buffer, 2);
+	assert(buffer[0] == 'B' && buffer[1] == 'M' || !"Not a bitmap file");
+	input.ignore(8);
+	int dataOffset = readInt(input);
+
+	//Read the header
+	int headerSize = readInt(input);
+	int width;
+	int height;
+	switch(headerSize) {
+		case 40:
+			//V3
+			width = readInt(input);
+			height = readInt(input);
+			input.ignore(2);
+			assert(readShort(input) == 24 || !"Image is not 24 bits per pixel");
+			assert(readShort(input) == 0 || !"Image is compressed");
+			break;
+		case 12:
+			//OS/2 V1
+			width = readShort(input);
+			height = readShort(input);
+			input.ignore(2);
+			assert(readShort(input) == 24 || !"Image is not 24 bits per pixel");
+			break;
+		case 64:
+			//OS/2 V2
+			assert(!"Can't load OS/2 V2 bitmaps");
+			break;
+		case 108:
+			//Windows V4
+			assert(!"Can't load Windows V4 bitmaps");
+			break;
+		case 124:
+			//Windows V5
+			assert(!"Can't load Windows V5 bitmaps");
+			break;
+		default:
+			assert(!"Unknown bitmap format");
+	}
+
+	//Read the data
+	int bytesPerRow = ((width * 3 + 3) / 4) * 4 - (width * 3 % 4);
+	int size = bytesPerRow * height;
+	auto_array<char> pixels(new char[size]);
+	input.seekg(dataOffset, ios_base::beg);
+	input.read(pixels.get(), size);
+
+	//Get the data into the right format
+	auto_array<char> pixels2(new char[width * height * 3]);
+	for(int y = 0; y < height; y++) {
+		for(int x = 0; x < width; x++) {
+			for(int c = 0; c < 3; c++) {
+				pixels2[3 * (width * y + x) + c] =
+					pixels[bytesPerRow * y + 3 * x + (2 - c)];
+			}
+		}
+	}
+
+	input.close();
+	return new Image(pixels2.release(), width, height);
+}*/
